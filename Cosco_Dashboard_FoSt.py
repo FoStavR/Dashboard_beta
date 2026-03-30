@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import glob
 import os
-import plotly.express as px 
+import plotly.express as px
 from PIL import Image
 import folium
 from streamlit_folium import st_folium
@@ -10,28 +10,30 @@ from geopy.geocoders import Nominatim
 from geopy.extra.rate_limiter import RateLimiter
 import matplotlib.colors as mcolors
 from folium.plugins import Fullscreen, MarkerCluster
-from folium.plugins import MiniMap
-import re 
+import re
+
 # ==============================
 # PAGE CONFIG
 # ==============================
-st.set_page_config( page_title="Welcome to COSCO Logistics Dashboard",page_icon="🌐", layout="wide")
-logo = Image.open(r"C:\Users\stavrfo\Desktop\83NJ4M1N0\Dashboard\Dashboard_Real_Implementation\logo.png") 
+st.set_page_config(page_title="COSCO Logistics Dashboard",
+                   page_icon="🌐",
+                   layout="wide")
+
+# Use relative path for logo
+logo_path = "logo.png"  # logo.png should be in the same folder as app.py
+logo = Image.open(logo_path)
+st.sidebar.image(logo, width=200)
 st.title("COSCO GREECE Logistics Dashboard 📈")
 
-
-# ============================== 
+# ==============================
 # DATA LOADING
-# ============================== 
-# -------------------------------
-# Load stored coordinates CSV
-# -------------------------------
-
+# ==============================
 def load_coordinates():
-    return pd.read_csv(r"C:\Users\stavrfo\Desktop\83NJ4M1N0\Dashboard\Dashboard_Real_Implementation\Data_xl\Master\region_coordinates.csv")  # Make sure CSV has lat, lon, city columns if needed
+    return pd.read_csv("Data_xl/Master/region_coordinates.csv")  # Relative path
+
 coords_df = load_coordinates()
-    
-def load_data(folder_path):
+
+def load_data(folder_path="Data_xl/Master"):
     excel_files = glob.glob(os.path.join(folder_path, "*.xlsx"))
 
     inbound_list = []
@@ -55,13 +57,10 @@ def load_data(folder_path):
 
     return inbound_all, outbound_all
 
-
-st.sidebar.image(logo, width='stretch')
 # ==============================
-# FILTER FUNCTION (SMART VERSION + DATE SAFE)
+# FILTER FUNCTION
 # ==============================
 def clean_series(s):
-    """Normalize categorical columns: strip, upper, collapse spaces"""
     return (
         s.dropna()
         .astype(str)
@@ -69,17 +68,12 @@ def clean_series(s):
         .str.upper()
         .str.replace(r'\s+', ' ', regex=True)
     )
-def apply_filters(df):
 
+def apply_filters(df):
     st.sidebar.header("Filters ≡")
 
-    # ------------------------------
-    # 🔄 RESET ALL FILTERS BUTTON
-    # ------------------------------
-    # Reset all filters automatically
     if st.sidebar.button("🔄 Reset All Filters", use_container_width=True):
         for key in list(st.session_state.keys()):
-            # Use empty list for multiselect filters
             if key.startswith("filter_"):
                 if "date" in key:
                     st.session_state[key] = None
@@ -90,9 +84,7 @@ def apply_filters(df):
     df.columns = df.columns.str.strip()
     filtered_df = df.copy()
 
-    # ------------------------------
-    # 📅 DATE FILTER
-    # ------------------------------
+    # DATE FILTER
     date_column = None
     if "W\H/PORT Outbound date" in df.columns:
         date_column = "W\H/PORT Outbound date"
@@ -100,9 +92,7 @@ def apply_filters(df):
         date_column = "WH Inbound date"
 
     if date_column:
-        filtered_df[date_column] = pd.to_datetime(
-            filtered_df[date_column], errors="coerce"
-        )
+        filtered_df[date_column] = pd.to_datetime(filtered_df[date_column], errors="coerce")
         valid_dates = filtered_df[date_column].dropna()
 
         if not valid_dates.empty:
@@ -120,100 +110,33 @@ def apply_filters(df):
             if selected_dates and len(selected_dates) == 2:
                 start_date = pd.to_datetime(selected_dates[0])
                 end_date = pd.to_datetime(selected_dates[1])
-
                 filtered_df = filtered_df[
                     (filtered_df[date_column].isna()) |
-                    ((filtered_df[date_column] >= start_date) &
-                     (filtered_df[date_column] <= end_date))
+                    ((filtered_df[date_column] >= start_date) & (filtered_df[date_column] <= end_date))
                 ]
 
-    # ------------------------------
-    # PROJECT FILTER
-    # ------------------------------
-    if 'PROJECT' in df.columns:
-        projects = st.sidebar.multiselect(
-            "Project 💾",
-            sorted(clean_series(df['PROJECT']).unique()),
-            key="filter_project"
-        )
-        if projects:
-            filtered_df = filtered_df[
-                clean_series(filtered_df['PROJECT']).isin(projects)
-            ]
+    # MULTISELECT FILTERS
+    filters = {
+        "PROJECT": "filter_project",
+        "Country": "filter_country",
+        "Destination Country": "filter_dest_country",
+        "Vendor": "filter_vendor",
+        "FDC": "filter_fdc",
+        "FDC/PORT": "filter_fdc_port"
+    }
 
-    # ------------------------------
-    # COUNTRY FILTER (Inbound)
-    # ------------------------------
-    if 'Country' in df.columns:
-        countries = st.sidebar.multiselect(
-            "Country 🗺️📍",
-            sorted(clean_series(df['Country']).unique()),
-            key="filter_country"
-        )
-        if countries:
-            filtered_df = filtered_df[
-                clean_series(filtered_df['Country']).isin(countries)
-            ]
-
-    # ------------------------------
-    # DESTINATION COUNTRY FILTER (Outbound)
-    # ------------------------------
-    if 'Destination Country' in df.columns:
-        dest_countries = st.sidebar.multiselect(
-            "Destination Country 🗺️📍",
-            sorted(clean_series(df['Destination Country']).unique()),
-            key="filter_dest_country"
-        )
-        if dest_countries:
-            filtered_df = filtered_df[
-                clean_series(filtered_df['Destination Country']).isin(dest_countries)
-            ]
-
-    # ------------------------------
-    # VENDOR FILTER
-    # ------------------------------
-    if 'Vendor' in df.columns:
-        vendors = st.sidebar.multiselect(
-            "Vendor ⛓️",
-            sorted(clean_series(df['Vendor']).unique()),
-            key="filter_vendor"
-        )
-        if vendors:
-            filtered_df = filtered_df[
-                clean_series(filtered_df['Vendor']).isin(vendors)
-            ]
-
-    # ------------------------------
-    # FDC FILTER (Inbound)
-    # ------------------------------
-    if 'FDC' in df.columns:
-        fdc = st.sidebar.multiselect(
-            "FDC 🏬🚚",
-            sorted(clean_series(df['FDC']).unique()),
-            key="filter_fdc"
-        )
-        if fdc:
-            filtered_df = filtered_df[
-                clean_series(filtered_df['FDC']).isin(fdc)
-            ]
-
-    # ------------------------------
-    # FDC/PORT FILTER (Outbound)
-    # ------------------------------
-    if 'FDC/PORT' in df.columns:
-        fdc_port = st.sidebar.multiselect(
-            "FDC 🏬🚚",
-            sorted(clean_series(df['FDC/PORT']).unique()),
-            key="filter_fdc_port"
-        )
-        if fdc_port:
-            filtered_df = filtered_df[
-                clean_series(filtered_df['FDC/PORT']).isin(fdc_port)
-            ]
+    for col, key in filters.items():
+        if col in df.columns:
+            options = sorted(clean_series(df[col]).unique())
+            selected = st.sidebar.multiselect(f"{col} Filter", options, key=key)
+            if selected:
+                filtered_df = filtered_df[clean_series(filtered_df[col]).isin(selected)]
 
     return filtered_df
 
-
+# ==============================
+# DASHBOARD FUNCTIONS
+# ==============================
 # ==============================
 # INBOUND DASHBOARD
 # ==============================
@@ -1091,24 +1014,15 @@ def show_outbound_dashboard(df):
 
         else:
             st.dataframe(vessel_counts.head(15), use_container_width=True)
- 
+
 # ==============================
 # MAIN APP FLOW
 # ==============================
+inbound_df, outbound_df = load_data("Data_xl/Master")
 
-folder_path = r"C:\Users\stavrfo\Desktop\83NJ4M1N0\Dashboard\Dashboard_Real_Implementation\Data_xl\Master"  # Update this path to your folder containing Excel files
-inbound_df, outbound_df = load_data(folder_path)
-
-# -----------------------------
-# Select Data View in Sidebar
-# -----------------------------
 st.sidebar.header("Data Selection 📊")
-data_choice = st.sidebar.radio(
-    "Display: ",
-    ["Inbound ◀️", "Outbound ▶️"]
-)
+data_choice = st.sidebar.radio("Display: ", ["Inbound ◀️", "Outbound ▶️"])
 
-# Apply filters based on selection
 if data_choice == "Inbound ◀️":
     if inbound_df.empty:
         st.warning("No Inbound data available.")
