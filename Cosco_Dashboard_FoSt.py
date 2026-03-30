@@ -20,7 +20,7 @@ st.set_page_config(page_title="COSCO Logistics Dashboard",
                    layout="wide")
 
 # Use relative path for logo
-logo_path = "Data / logo.png"  # logo.png should be in the same folder as app.py
+logo_path = "Data/logo.png"  # logo.png should be in the same folder as app.py
 logo = Image.open(logo_path)
 st.sidebar.image(logo, width=200)
 st.title("COSCO GREECE Logistics Dashboard 📈")
