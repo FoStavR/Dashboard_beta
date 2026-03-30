@@ -60,21 +60,30 @@ def load_data(folder_path="Data"):
         # ------------------------------
         # Load INBOUND sheet
         # ------------------------------
+        try:
             inbound_df = pd.read_excel(file, sheet_name='INBOUND')
             if inbound_df.empty:
                 st.warning(f"'INBOUND' sheet is empty in file: {file}")
             else:
                 inbound_list.append(inbound_df)
-        
+        except ValueError as ve:
+            st.info(f"'INBOUND' sheet not found in file: {file}")
+        except Exception as e:
+            st.error(f"Error reading 'INBOUND' sheet in {file}: {e}")
 
         # ------------------------------
         # Load OUTBOUND sheet
         # ------------------------------
+        try:
             outbound_df = pd.read_excel(file, sheet_name='OUTBOUND')
             if outbound_df.empty:
                 st.warning(f"'OUTBOUND' sheet is empty in file: {file}")
             else:
                 outbound_list.append(outbound_df)
+        except ValueError as ve:
+            st.info(f"'OUTBOUND' sheet not found in file: {file}")
+        except Exception as e:
+            st.error(f"Error reading 'OUTBOUND' sheet in {file}: {e}")
 
     inbound_all = pd.concat(inbound_list, ignore_index=True) if inbound_list else pd.DataFrame()
     outbound_all = pd.concat(outbound_list, ignore_index=True) if outbound_list else pd.DataFrame()
