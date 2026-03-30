@@ -67,9 +67,9 @@ def load_data(folder_path="Data"):
             else:
                 inbound_list.append(inbound_df)
         except ValueError as ve:
-            
+            continue
         except Exception as e:
-           
+            continue
 
         # ------------------------------
         # Load OUTBOUND sheet
@@ -81,9 +81,9 @@ def load_data(folder_path="Data"):
             else:
                 outbound_list.append(outbound_df)
         except ValueError as ve:
-           
+             continue
         except Exception as e:
-         
+             continue
 
     inbound_all = pd.concat(inbound_list, ignore_index=True) if inbound_list else pd.DataFrame()
     outbound_all = pd.concat(outbound_list, ignore_index=True) if outbound_list else pd.DataFrame()
