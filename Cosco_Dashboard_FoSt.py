@@ -29,11 +29,11 @@ st.title("COSCO GREECE Logistics Dashboard 📈")
 # DATA LOADING
 # ==============================
 def load_coordinates():
-    return pd.read_csv("Data_xl/Master/region_coordinates.csv")  # Relative path
+    return pd.read_csv("Data/region_coordinates.csv")  # Relative path
 
 coords_df = load_coordinates()
 
-def load_data(folder_path="Data_xl/Master"):
+def load_data(folder_path="Data"):
     excel_files = glob.glob(os.path.join(folder_path, "*.xlsx"))
 
     inbound_list = []
@@ -1018,7 +1018,7 @@ def show_outbound_dashboard(df):
 # ==============================
 # MAIN APP FLOW
 # ==============================
-inbound_df, outbound_df = load_data("Data_xl/Master")
+inbound_df, outbound_df = load_data("Data")
 
 st.sidebar.header("Data Selection 📊")
 data_choice = st.sidebar.radio("Display: ", ["Inbound ◀️", "Outbound ▶️"])
