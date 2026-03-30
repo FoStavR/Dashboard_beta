@@ -48,8 +48,8 @@ coords_df = load_coordinates()
 # ------------------------------
 def load_data(folder_path="Data"):
     # Search for inbound and outbound files separately
-    inbound_files = glob.glob(os.path.join(folder_path, "*inbound*.xlsx"), recursive=True)
-    outbound_files = glob.glob(os.path.join(folder_path, "*outbound*.xlsx"), recursive=True)
+    inbound_files = glob.glob(os.path.join(folder_path, "Master_Inbound.xlsx"), recursive=True)
+    outbound_files = glob.glob(os.path.join(folder_path, "Master_Outbound.xlsx"), recursive=True)
 
     inbound_list = []
     outbound_list = []
