@@ -47,44 +47,42 @@ coords_df = load_coordinates()
 # Load inbound/outbound Excel data
 # ------------------------------
 def load_data(folder_path="Data"):
-    excel_files = glob.glob(os.path.join(folder_path, "*.xlsx"))
-
-    if not excel_files:
-        st.warning(f"No Excel files found in folder: {folder_path}")
-        return pd.DataFrame(), pd.DataFrame()
+    # Search for inbound and outbound files separately
+    inbound_files = glob.glob(os.path.join(folder_path, "*inbound*.xlsx"), recursive=True)
+    outbound_files = glob.glob(os.path.join(folder_path, "*outbound*.xlsx"), recursive=True)
 
     inbound_list = []
     outbound_list = []
 
-    for file in excel_files:
-        # ------------------------------
-        # Load INBOUND sheet
-        # ------------------------------
-        try:
-            inbound_df = pd.read_excel(file, sheet_name='INBOUND')
-            if inbound_df.empty:
-                st.warning(f"'INBOUND' sheet is empty in file: {file}")
-            else:
-                inbound_list.append(inbound_df)
-        except ValueError as ve:
-            break
-        except Exception as e:
-            break
+    # ---------- Load inbound files ----------
+    if not inbound_files:
+        st.warning(f"No inbound Excel files found in folder: {folder_path}")
+    else:
+        for file in inbound_files:
+            try:
+                df = pd.read_excel(file)
+                if df.empty:
+                    st.warning(f"Inbound file is empty: {file}")
+                else:
+                    inbound_list.append(df)
+            except Exception as e:
+                st.error(f"Error reading inbound file {file}: {e}")
 
-        # ------------------------------
-        # Load OUTBOUND sheet
-        # ------------------------------
-        try:
-            outbound_df = pd.read_excel(file, sheet_name='OUTBOUND')
-            if outbound_df.empty:
-                st.warning(f"'OUTBOUND' sheet is empty in file: {file}")
-            else:
-                outbound_list.append(outbound_df)
-        except ValueError as ve:
-             break
-        except Exception as e:
-             break
+    # ---------- Load outbound files ----------
+    if not outbound_files:
+        st.warning(f"No outbound Excel files found in folder: {folder_path}")
+    else:
+        for file in outbound_files:
+            try:
+                df = pd.read_excel(file)
+                if df.empty:
+                    st.warning(f"Outbound file is empty: {file}")
+                else:
+                    outbound_list.append(df)
+            except Exception as e:
+                st.error(f"Error reading outbound file {file}: {e}")
 
+    # Concatenate all dataframes
     inbound_all = pd.concat(inbound_list, ignore_index=True) if inbound_list else pd.DataFrame()
     outbound_all = pd.concat(outbound_list, ignore_index=True) if outbound_list else pd.DataFrame()
 
@@ -94,7 +92,6 @@ def load_data(folder_path="Data"):
         st.info("No outbound data loaded from Excel files.")
 
     return inbound_all, outbound_all
-
 # ==============================
 # FILTER FUNCTION
 # ==============================
