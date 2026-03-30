@@ -25,35 +25,73 @@ logo = Image.open(logo_path)
 st.sidebar.image(logo, width=200)
 st.title("COSCO GREECE Logistics Dashboard 📈")
 
-# ==============================
-# DATA LOADING
-# ==============================
-def load_coordinates():
-    return pd.read_csv("Data/region_coordinates.csv")  # Relative path
+# ------------------------------
+# Load region coordinates
+# ------------------------------
+def load_coordinates(file_path="Data/region_coordinates.csv"):
+    if not os.path.exists(file_path):
+        st.warning(f"Coordinates file not found: {file_path}")
+        return pd.DataFrame(columns=["Region", "Destination Country", "lat", "lon"])
+    try:
+        df = pd.read_csv(file_path)
+        if df.empty:
+            st.warning(f"Coordinates file is empty: {file_path}")
+        return df
+    except Exception as e:
+        st.error(f"Error reading {file_path}: {e}")
+        return pd.DataFrame(columns=["Region", "Destination Country", "lat", "lon"])
 
 coords_df = load_coordinates()
 
+# ------------------------------
+# Load inbound/outbound Excel data
+# ------------------------------
 def load_data(folder_path="Data"):
     excel_files = glob.glob(os.path.join(folder_path, "*.xlsx"))
+
+    if not excel_files:
+        st.warning(f"No Excel files found in folder: {folder_path}")
+        return pd.DataFrame(), pd.DataFrame()
 
     inbound_list = []
     outbound_list = []
 
     for file in excel_files:
+        # ------------------------------
+        # Load INBOUND sheet
+        # ------------------------------
         try:
             inbound_df = pd.read_excel(file, sheet_name='INBOUND')
-            inbound_list.append(inbound_df)
-        except:
-            pass
+            if inbound_df.empty:
+                st.warning(f"'INBOUND' sheet is empty in file: {file}")
+            else:
+                inbound_list.append(inbound_df)
+        except ValueError as ve:
+            st.info(f"'INBOUND' sheet not found in file: {file}")
+        except Exception as e:
+            st.error(f"Error reading 'INBOUND' sheet in {file}: {e}")
 
+        # ------------------------------
+        # Load OUTBOUND sheet
+        # ------------------------------
         try:
             outbound_df = pd.read_excel(file, sheet_name='OUTBOUND')
-            outbound_list.append(outbound_df)
-        except:
-            pass
+            if outbound_df.empty:
+                st.warning(f"'OUTBOUND' sheet is empty in file: {file}")
+            else:
+                outbound_list.append(outbound_df)
+        except ValueError as ve:
+            st.info(f"'OUTBOUND' sheet not found in file: {file}")
+        except Exception as e:
+            st.error(f"Error reading 'OUTBOUND' sheet in {file}: {e}")
 
     inbound_all = pd.concat(inbound_list, ignore_index=True) if inbound_list else pd.DataFrame()
     outbound_all = pd.concat(outbound_list, ignore_index=True) if outbound_list else pd.DataFrame()
+
+    if inbound_all.empty:
+        st.info("No inbound data loaded from Excel files.")
+    if outbound_all.empty:
+        st.info("No outbound data loaded from Excel files.")
 
     return inbound_all, outbound_all
 
