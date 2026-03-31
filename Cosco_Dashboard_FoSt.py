@@ -97,7 +97,7 @@ def load_data(folder_path="Data"):
 # ==============================
 def clean_series(s):
     return (
-        s.dropna()
+        s.fillna("")
         .astype(str)
         .str.strip()
         .str.upper()
