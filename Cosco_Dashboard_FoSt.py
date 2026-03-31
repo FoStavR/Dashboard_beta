@@ -161,20 +161,20 @@ def apply_filters(df):
     }
 
     for col, key in filters.items():
-    if col in filtered_df.columns:
-
-        options = sorted(clean_series(filtered_df[col]).unique())
-
-        selected = st.sidebar.multiselect(
-            f"{col} Filter",
-            options,
-            key=key
-        )
-
-        if selected:
-            filtered_df = filtered_df[
-                clean_series(filtered_df[col]).isin(selected)
-            ]
+      if col in filtered_df.columns:
+  
+          options = sorted(clean_series(filtered_df[col]).unique())
+  
+          selected = st.sidebar.multiselect(
+              f"{col} Filter",
+              options,
+              key=key
+          )
+  
+          if selected:
+              filtered_df = filtered_df[
+                  clean_series(filtered_df[col]).isin(selected)
+              ]
 
     return filtered_df
 
