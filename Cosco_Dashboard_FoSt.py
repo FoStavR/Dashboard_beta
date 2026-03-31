@@ -165,7 +165,8 @@ def apply_filters(df):
             options = sorted(clean_series(df[col]).unique())
             selected = st.sidebar.multiselect(f"{col} Filter", options, key=key)
             if selected:
-                filtered_df = filtered_df[clean_series(filtered_df[col]).isin(selected)]
+                mask = clean_series(filtered_df[col]).isin(selected)
+                filtered_df = filtered_df.loc[mask]
 
     return filtered_df
 
